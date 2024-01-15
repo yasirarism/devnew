@@ -48,8 +48,7 @@ class ChannelLogger:
         Returns:
             str
         """
-        return "<b><a href='https://t.me/c/{}/{}'>Preview</a></b>".format(
-            str(Config.LOG_CHANNEL_ID)[4:], message_id)
+        return f"<b><a href='https://t.me/c/{str(Config.LOG_CHANNEL_ID)[4:]}/{message_id}'>Preview</a></b>"
 
     async def log(self, text: str, name: str = '') -> int:
         """\nsend text message to log channel.
@@ -64,9 +63,7 @@ class ChannelLogger:
         Returns:
             message_id on success or None
         """
-        string = self._string
-        if name:
-            string = _gen_string(name)
+        string = _gen_string(name) if name else self._string
         _LOG.debug(_LOG_STR, f"logging text : {text} to channel : {self._id}")
         try:
             msg = await self._client.send_message(chat_id=self._id,
@@ -133,9 +130,9 @@ class ChannelLogger:
         """
         caption = caption or ''
         file_id = None
-        if message and message.caption:
-            caption = caption + message.caption.html
         if message:
+            if message.caption:
+                caption = caption + message.caption.html
             file_id = get_file_id_of_media(message)
         if message and message.media and file_id:
             if caption:

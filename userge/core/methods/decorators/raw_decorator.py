@@ -51,9 +51,7 @@ async def _update_u_cht(r_m: RawMessage) -> Optional[ChatMember]:
             user = await r_m.chat.get_member(RawClient.USER_ID)
         except UserNotParticipant:
             return None
-        user.can_all = None
-        if user.status == "creator":
-            user.can_all = True
+        user.can_all = True if user.status == "creator" else None
         if user.status in ("creator", "administrator"):
             _U_AD_CHT[r_m.chat.id] = user
         else:
@@ -99,12 +97,14 @@ async def _init(r_c: Union['_client.Userge', '_client.UsergeBot'],
                 r_m.from_user.id in Config.OWNER_ID)):
         RawClient.LAST_OUTGOING_TIME = time.time()
     async with _INIT_LK:
-        if RawClient.DUAL_MODE:
-            if RawClient.USER_ID and RawClient.BOT_ID:
-                return
-        else:
-            if RawClient.USER_ID or RawClient.BOT_ID:
-                return
+        if (
+            RawClient.DUAL_MODE
+            and RawClient.USER_ID
+            and RawClient.BOT_ID
+            or not RawClient.DUAL_MODE
+            and (RawClient.USER_ID or RawClient.BOT_ID)
+        ):
+            return
         if is_bot:
             if not RawClient.BOT_ID:
                 RawClient.BOT_ID = (await r_c.get_me()).id
@@ -148,9 +148,7 @@ def _get_chat_member(r_m: RawMessage, is_bot: bool) -> Optional[ChatMember]:
             return _B_NM_CHT[r_m.chat.id]
     if r_m.chat.id in _U_AD_CHT:
         return _U_AD_CHT[r_m.chat.id]
-    if r_m.chat.id in _U_NM_CHT:
-        return _U_NM_CHT[r_m.chat.id]
-    return None
+    return _U_NM_CHT[r_m.chat.id] if r_m.chat.id in _U_NM_CHT else None
 
 
 async def _get_lock(key: str) -> asyncio.Lock:
@@ -166,16 +164,15 @@ async def _bot_is_present(r_c: Union['_client.Userge', '_client.UsergeBot'],
     if is_bot:
         if r_m.chat.id not in _B_CMN_CHT:
             _B_CMN_CHT.append(r_m.chat.id)
-    else:
-        if round(time.time() - _TASK_2_START_TO) > 10:
-            try:
-                chats = await r_c.get_common_chats(RawClient.BOT_ID)
-                _B_CMN_CHT.clear()
-                for chat in chats:
-                    _B_CMN_CHT.append(chat.id)
-            except PeerIdInvalid:
-                pass
-            _TASK_2_START_TO = time.time()
+    elif round(time.time() - _TASK_2_START_TO) > 10:
+        try:
+            chats = await r_c.get_common_chats(RawClient.BOT_ID)
+            _B_CMN_CHT.clear()
+            for chat in chats:
+                _B_CMN_CHT.append(chat.id)
+        except PeerIdInvalid:
+            pass
+        _TASK_2_START_TO = time.time()
     return r_m.chat.id in _B_CMN_CHT
 
 
@@ -213,13 +210,22 @@ async def _both_have_perm(flt: Union['types.raw.Command', 'types.raw.Filter'],
     if flt.check_promote_perm and not (
             (user.can_all or user.can_promote_members) and bot.can_promote_members):
         return False
-    if flt.check_invite_perm and not (
-            (user.can_all or user.can_invite_users) and bot.can_invite_users):
-        return False
-    if flt.check_pin_perm and not (
-            (user.can_all or user.can_pin_messages) and bot.can_pin_messages):
-        return False
-    return True
+    return (
+        False
+        if flt.check_invite_perm
+        and (
+            not user.can_all
+            and not user.can_invite_users
+            or not bot.can_invite_users
+        )
+        else bool(
+            not flt.check_pin_perm
+            or (
+                (user.can_all or user.can_pin_messages)
+                and bot.can_pin_messages
+            )
+        )
+    )
 
 
 class RawDecorator(RawClient):

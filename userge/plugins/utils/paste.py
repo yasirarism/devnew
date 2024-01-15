@@ -47,11 +47,11 @@ async def paste_(message: Message) -> None:
         use_neko = True
         flags.remove('n')
     if flags and len(flags) == 1:
-        file_ext = '.' + flags[0]
+        file_ext = f'.{flags[0]}'
     await message.edit("`Pasting text ...`")
     async with aiohttp.ClientSession() as ses:
         if use_neko:
-            async with ses.post(NEKOBIN_URL + "api/documents", json={"content": text}) as resp:
+            async with ses.post(f"{NEKOBIN_URL}api/documents", json={"content": text}) as resp:
                 if resp.status == 201:
                     response = await resp.json()
                     key = response['result']['key']
@@ -61,7 +61,7 @@ async def paste_(message: Message) -> None:
                 else:
                     await message.err("Failed to reach Nekobin")
         else:
-            async with ses.post(DOGBIN_URL + "documents", data=text.encode('utf-8')) as resp:
+            async with ses.post(f"{DOGBIN_URL}documents", data=text.encode('utf-8')) as resp:
                 if resp.status == 200:
                     response = await resp.json()
                     key = response['key']

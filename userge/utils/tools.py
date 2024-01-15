@@ -28,7 +28,7 @@ _PTN_SPLIT = re.compile(r'(\.\d+|\.|\d+)')
 def sort_file_name_key(file_name: str) -> tuple:
     """ sort key for file names """
     if not isinstance(file_name, str):
-        file_name = str(file_name)
+        file_name = file_name
     return tuple(_sort_algo(_PTN_SPLIT.split(file_name.lower())))
 
 
@@ -90,10 +90,16 @@ def demojify(string: str) -> str:
 
 def get_file_id_of_media(message: 'userge.Message') -> Optional[str]:
     """ get file_id """
-    file_ = message.audio or message.animation or message.photo \
-        or message.sticker or message.voice or message.video_note \
-        or message.video or message.document
-    if file_:
+    if (
+        file_ := message.audio
+        or message.animation
+        or message.photo
+        or message.sticker
+        or message.voice
+        or message.video_note
+        or message.video
+        or message.document
+    ):
         return file_.file_id
     return None
 
@@ -116,10 +122,12 @@ def time_formatter(seconds: float) -> str:
     minutes, seconds = divmod(int(seconds), 60)
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
-    tmp = ((str(days) + "d, ") if days else "") + \
-        ((str(hours) + "h, ") if hours else "") + \
-        ((str(minutes) + "m, ") if minutes else "") + \
-        ((str(seconds) + "s, ") if seconds else "")
+    tmp = (
+        (f"{str(days)}d, " if days else "")
+        + (f"{str(hours)}h, " if hours else "")
+        + (f"{str(minutes)}m, " if minutes else "")
+        + (f"{str(seconds)}s, " if seconds else "")
+    )
     return tmp[:-2]
 
 

@@ -219,11 +219,10 @@ async def raw_del(message: Message, name, collection, chats):
             chats.clear()
             await collection.drop()
             out = f"`All {name} Messages Removed Successfully!`"
-    else:
-        if await collection.find_one_and_delete({'_id': message.chat.id}):
-            if message.chat.id in chats:
-                chats.remove(message.chat.id)
-            out = f"`{name} Removed Successfully!`"
+    elif await collection.find_one_and_delete({'_id': message.chat.id}):
+        if message.chat.id in chats:
+            chats.remove(message.chat.id)
+        out = f"`{name} Removed Successfully!`"
     await message.edit(text=out, del_in=3)
 
 

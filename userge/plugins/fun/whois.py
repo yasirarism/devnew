@@ -19,8 +19,7 @@ from userge import userge, Message
     'examples': "{tr}whois [user_id | username]"}, allow_channels=False)
 async def who_is(message: Message):
     await message.edit("`Collecting Whois Info.. Hang on!`")
-    user_id = message.input_str
-    if user_id:
+    if user_id := message.input_str:
         try:
             from_user = await message.client.get_users(user_id)
             from_chat = await message.client.get_chat(user_id)
@@ -58,9 +57,11 @@ async def who_is(message: Message):
         message_out_str += "<b>🔗 Permanent Link To Profile:</b> "
         message_out_str += f"<a href='tg://user?id={from_user.id}'>{from_user.first_name}</a>"
 
-        s_perm = True
-        if message.chat.permissions:
-            s_perm = bool(message.chat.permissions.can_send_media_messages)
+        s_perm = (
+            bool(message.chat.permissions.can_send_media_messages)
+            if message.chat.permissions
+            else True
+        )
         if from_user.photo and s_perm:
             local_user_photo = await message.client.download_media(
                 message=from_user.photo.big_file_id)
@@ -72,8 +73,6 @@ async def who_is(message: Message):
             os.remove(local_user_photo)
             await message.delete()
         else:
-            cuz = "NO DP Found"
-            if not s_perm:
-                cuz = "Chat Send Media Forbidden"
-            message_out_str = "<b>📷 " + cuz + " 📷</b>\n\n" + message_out_str
+            cuz = "Chat Send Media Forbidden" if not s_perm else "NO DP Found"
+            message_out_str = f"<b>📷 {cuz}" + " 📷</b>\n\n" + message_out_str
             await message.edit(message_out_str)

@@ -89,10 +89,7 @@ async def kang_(message: Message):
             emoji_ = "🤔"
 
         u_name = user.username
-        if u_name:
-            u_name = "@" + u_name
-        else:
-            u_name = user.first_name or user.id
+        u_name = f"@{u_name}" if u_name else user.first_name or user.id
         packname = f"a{user.id}_by_userge_{pack}"
         custom_packnick = Config.CUSTOM_PACK_NAME or f"{u_name}'s kang pack"
         packnick = f"{custom_packnick} Vol.{pack}"
@@ -129,8 +126,7 @@ async def kang_(message: Message):
                     if is_anim:
                         packname += "_anim"
                         packnick += " (Animated)"
-                    await message.edit("`Switching to Pack " + str(pack) +
-                                       " due to insufficient space`")
+                    await message.edit(f"`Switching to Pack {pack} due to insufficient space`")
                     await conv.send_message(packname)
                     msg = await conv.get_response(mark_read=True)
                     if msg.text == "Invalid pack selected.":
